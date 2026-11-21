@@ -63,7 +63,16 @@ export default async function handler(req, res) {
              <span class="dot-check">✓</span>
              Code Received
            </div>
-           <div class="otp-code">${code}</div>
+           <div class="otp-container">
+             <div class="otp-code" id="otpCode">${code}</div>
+             <button class="copy-btn" id="copyBtn" onclick="copyOtp()" title="Copy OTP">
+               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                 <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                 <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+               </svg>
+               <span>Copy</span>
+             </button>
+           </div>
            <div class="info-text">Copy this code and use it quickly</div>
            <div class="progress-bar"><div class="progress-fill success"></div></div>`;
 
@@ -142,15 +151,49 @@ export default async function handler(req, res) {
       width: 18px; height: 18px; background: #4ade80; color: #09090b;
       border-radius: 50%; font-size: 12px; font-weight: 900;
     }
+    .otp-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      margin: 15px 0;
+    }
     .otp-code {
       font-size: 58px; font-weight: 900; color: #4ade80;
-      letter-spacing: 12px; margin: 15px 0;
+      letter-spacing: 12px;
       text-shadow: 0 0 40px rgba(74, 222, 128, 0.4);
       font-family: 'Courier New', monospace;
       animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
       padding-left: 12px;
     }
     @keyframes popIn { 0% { transform: scale(0.7); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+    .copy-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 24px;
+      background: rgba(74, 222, 128, 0.1);
+      border: 1px solid rgba(74, 222, 128, 0.3);
+      color: #4ade80;
+      border-radius: 10px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.25s ease;
+    }
+    .copy-btn:hover {
+      background: rgba(74, 222, 128, 0.2);
+      border-color: rgba(74, 222, 128, 0.5);
+      transform: translateY(-1px);
+    }
+    .copy-btn:active { transform: translateY(0); }
+    .copy-btn.copied {
+      background: rgba(74, 222, 128, 0.25);
+      border-color: #4ade80;
+    }
+    .copy-btn svg { flex-shrink: 0; }
     .otp-placeholder {
       font-size: 42px; font-weight: 700; color: rgba(148, 163, 184, 0.2);
       letter-spacing: 8px; margin: 15px 0; font-family: 'Courier New', monospace;
@@ -210,6 +253,47 @@ export default async function handler(req, res) {
       Powered by Moon US Nums
     </div>
   </div>
+
+  <script>
+    function copyOtp() {
+      const codeEl = document.getElementById('otpCode');
+      const btn = document.getElementById('copyBtn');
+      if (!codeEl || !btn) return;
+
+      const code = codeEl.textContent.trim();
+      if (!code) return;
+
+      const done = () => {
+        btn.classList.add('copied');
+        btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg><span>Copied!</span>';
+        setTimeout(() => {
+          btn.classList.remove('copied');
+          btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg><span>Copy</span>';
+        }, 2000);
+      };
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(code).then(done).catch(() => {
+          fallbackCopy(code);
+          done();
+        });
+      } else {
+        fallbackCopy(code);
+        done();
+      }
+    }
+
+    function fallbackCopy(text) {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); } catch(e) {}
+      document.body.removeChild(ta);
+    }
+  </script>
 </body>
 </html>`;
       return res.status(200).send(html);
